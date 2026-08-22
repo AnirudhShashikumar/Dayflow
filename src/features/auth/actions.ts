@@ -48,7 +48,7 @@ export async function updatePassword(_: ActionState, formData: FormData): Promis
   if (password.length < 8) return { error: "Use at least 8 characters." };
   const supabase = await createClient(); const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: error.message };
-  redirect("/overview?password=updated");
+  redirect("/home");
 }
 
 export async function signOut() { const supabase = await createClient(); await supabase.auth.signOut(); redirect("/login"); }
