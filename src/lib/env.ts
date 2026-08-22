@@ -60,16 +60,31 @@ export function resolveSupabasePublicConfig(input: SupabaseEnvironmentInput): Su
 
 // These must remain direct property accesses. Next.js only inlines NEXT_PUBLIC_ variables
 // into browser bundles when their names are statically referenced.
-const supabaseEnvironment = resolveSupabasePublicConfig({
+const supabaseEnvironmentInput: SupabaseEnvironmentInput = {
   url: process.env.NEXT_PUBLIC_SUPABASE_URL,
   publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   legacyAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
+};
+const supabaseEnvironment = resolveSupabasePublicConfig(supabaseEnvironmentInput);
 
 export const isSupabaseConfigured = supabaseEnvironment.configured;
 
 export function getSupabaseEnvStatus() {
-  return supabaseEnvironment;
+  const hasPublishableKey = Boolean(supabaseEnvironmentInput.publishableKey?.trim());
+  const hasLegacyAnonKey = Boolean(supabaseEnvironmentInput.legacyAnonKey?.trim());
+
+  return {
+    configured: supabaseEnvironment.configured,
+    hasUrl: Boolean(supabaseEnvironmentInput.url?.trim()),
+    hasPublishableKey,
+    hasLegacyAnonKey,
+    selectedKey: hasPublishableKey
+      ? "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      : hasLegacyAnonKey
+        ? "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+        : null,
+    issues: supabaseEnvironment.issues,
+  };
 }
 
 export function logSupabaseConfigurationError(context: string) {

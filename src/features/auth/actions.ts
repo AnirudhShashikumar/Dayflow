@@ -64,7 +64,7 @@ export async function signIn(_: ActionState, formData: FormData): Promise<Action
 }
 
 export async function register(_: ActionState, formData: FormData): Promise<ActionState> {
-  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and anon key to .env.local." };
+  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and publishable key (or legacy anon key) to .env.local." };
   const parsed = registerSchema.safeParse({ ...Object.fromEntries(formData), employeeCode: formData.get("employeeCode") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form" };
   const { confirmPassword: _confirm, employeeCode, fullName, ...credentials } = parsed.data;
@@ -75,7 +75,7 @@ export async function register(_: ActionState, formData: FormData): Promise<Acti
 }
 
 export async function requestPasswordReset(_: ActionState, formData: FormData): Promise<ActionState> {
-  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and anon key to .env.local." };
+  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and publishable key (or legacy anon key) to .env.local." };
   const email = String(formData.get("email") ?? "");
   if (!loginSchema.shape.email.safeParse(email).success) return { error: "Enter a valid email." };
   const supabase = await createClient(); const { url } = getPublicEnv(); void url;
@@ -85,7 +85,7 @@ export async function requestPasswordReset(_: ActionState, formData: FormData): 
 }
 
 export async function updatePassword(_: ActionState, formData: FormData): Promise<ActionState> {
-  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and anon key to .env.local." };
+  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and publishable key (or legacy anon key) to .env.local." };
   const password = String(formData.get("password") ?? "");
   if (password.length < 8) return { error: "Use at least 8 characters." };
   const supabase = await createClient(); const { error } = await supabase.auth.updateUser({ password });

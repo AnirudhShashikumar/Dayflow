@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSupabasePublicConfig } from "./env";
+import { getSupabaseEnvStatus, resolveSupabasePublicConfig } from "./env";
 
 describe("Supabase environment resolution", () => {
   it("accepts the current Supabase publishable-key variables used by Vercel", () => {
@@ -54,5 +54,17 @@ describe("Supabase environment resolution", () => {
 
     expect(status.configured).toBe(false);
     if (!status.configured) expect(status.issues).toContain("NEXT_PUBLIC_SUPABASE_URL is not a valid URL.");
+  });
+
+  it("exposes diagnostics without exposing the resolved URL or key", () => {
+    const status = getSupabaseEnvStatus();
+
+    expect(status).not.toHaveProperty("env");
+    expect(status).not.toHaveProperty("url");
+    expect(status).not.toHaveProperty("publishableKey");
+    expect(status.selectedKey === null || [
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    ].includes(status.selectedKey)).toBe(true);
   });
 });

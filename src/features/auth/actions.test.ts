@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
@@ -7,12 +7,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/env", () => ({
-  getPublicEnv: () => ({ url: "https://example.supabase.co", anonKey: "test-key" }),
+  getPublicEnv: () => ({ url: "https://example.supabase.co", publishableKey: "test-key" }),
   isSupabaseConfigured: true,
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 
-import { register, signIn } from "./actions";
+import { register, requestPasswordReset, signIn, updatePassword } from "./actions";
 import type { UserRole } from "@/types/domain";
 
 function loginForm(portal?: "employee" | "hr") {
@@ -38,6 +38,8 @@ function setupClient({
 } = {}) {
   const signOut = vi.fn().mockResolvedValue({ error: null });
   const signUp = vi.fn().mockResolvedValue({ error: null });
+  const resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null });
+  const updateUser = vi.fn().mockResolvedValue({ error: null });
   const maybeSingle = vi.fn().mockResolvedValue({
     data: profile ? { role, account_status: accountStatus } : null,
     error: profileError,
@@ -49,12 +51,16 @@ function setupClient({
     error: authError,
   });
   const client = {
-    auth: { signInWithPassword, signOut, signUp },
+    auth: { signInWithPassword, signOut, signUp, resetPasswordForEmail, updateUser },
     from: vi.fn(() => ({ select })),
   };
   mocks.createClient.mockResolvedValue(client);
-  return { client, maybeSingle, signInWithPassword, signOut, signUp };
+  return { client, maybeSingle, signInWithPassword, signOut, signUp, resetPasswordForEmail, updateUser };
 }
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("dual-portal sign in", () => {
   beforeEach(() => {
@@ -176,5 +182,37 @@ describe("public registration", () => {
     expect(signUp).toHaveBeenCalledWith(expect.objectContaining({
       options: { data: expect.objectContaining({ role: "employee" }) },
     }));
+  });
+});
+
+describe("password recovery", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.redirect.mockImplementation(() => undefined as never);
+  });
+
+  it("requests a reset through Supabase using the configured callback", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://dayflow.test");
+    const { resetPasswordForEmail } = setupClient();
+    const form = new FormData();
+    form.set("email", "employee@dayflow.test");
+
+    const result = await requestPasswordReset({}, form);
+
+    expect(result).toEqual({ success: "If an account exists, a reset link has been sent." });
+    expect(resetPasswordForEmail).toHaveBeenCalledWith("employee@dayflow.test", {
+      redirectTo: "https://dayflow.test/auth/callback?next=/reset-password",
+    });
+  });
+
+  it("updates the authenticated user's password through Supabase", async () => {
+    const { updateUser } = setupClient();
+    const form = new FormData();
+    form.set("password", "NewPassword1");
+
+    await updatePassword({}, form);
+
+    expect(updateUser).toHaveBeenCalledWith({ password: "NewPassword1" });
+    expect(mocks.redirect).toHaveBeenCalledWith("/overview?password=updated");
   });
 });
