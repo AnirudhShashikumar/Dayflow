@@ -1,0 +1,45 @@
+import Link from "next/link";
+import { format, startOfWeek, subDays } from "date-fns";
+import { ArrowRight, Bell, CalendarCheck, CircleDollarSign, FileText, Sparkles, TrendingUp } from "lucide-react";
+import { requireProfile } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/shared/avatar";
+import { AttendanceCard } from "@/features/attendance/attendance-card";
+import { WeeklyHoursChart } from "@/components/dashboard/employee-charts";
+import { formatCurrency } from "@/lib/utils";
+
+export default async function EmployeeOverview() {
+  const profile = await requireProfile(["employee"]); const supabase = await createClient(); const today = format(new Date(), "yyyy-MM-dd"); const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const { data: employee } = await supabase.from("employee_profiles").select("id,designation,department:departments(name)").eq("profile_id", profile.id).single();
+  const employeeId = employee?.id;
+  const [attendanceRes, weekRes, balancesRes, leaveRes, payrollRes, announcementRes, notificationRes] = employeeId ? await Promise.all([
+    supabase.from("attendance_records").select("check_in,check_out,total_minutes").eq("employee_id", employeeId).eq("work_date", today).maybeSingle(),
+    supabase.from("attendance_records").select("work_date,total_minutes,status").eq("employee_id", employeeId).gte("work_date", weekStart).lte("work_date", today).order("work_date"),
+    supabase.from("leave_balances").select("balance_days,used_days,leave_type:leave_types(name,color)").eq("employee_id", employeeId),
+    supabase.from("leave_requests").select("id,start_date,end_date,status,leave_type:leave_types(name)").eq("employee_id", employeeId).eq("status", "pending").order("created_at", { ascending: false }).limit(1),
+    supabase.from("payroll_records").select("payroll_month,net_salary,status").eq("employee_id", employeeId).in("status", ["processed","paid"]).order("payroll_month", { ascending: false }).limit(1),
+    supabase.from("announcements").select("id,title,message,priority,publish_date").eq("active", true).lte("publish_date", today).or(`expiry_date.is.null,expiry_date.gte.${today}`).order("publish_date", { ascending: false }).limit(2),
+    supabase.from("notifications").select("id,title,message,created_at,is_read,link").eq("recipient_id", profile.id).order("created_at", { ascending: false }).limit(3),
+  ]) : [{data:null},{data:[]},{data:[]},{data:[]},{data:[]},{data:[]},{data:[]}];
+  const week = weekRes.data ?? []; const weeklyMinutes = week.reduce((sum, item) => sum + item.total_minutes, 0); const presentDays = week.filter((item) => item.status === "present" || item.status === "half_day").length;
+  const chartData = Array.from({ length: 5 }, (_, index) => { const date = subDays(new Date(), 4-index); const row = week.find((item) => item.work_date === format(date,"yyyy-MM-dd")); return { day: format(date,"EEE"), hours: Number(((row?.total_minutes ?? 0)/60).toFixed(1)) }; });
+  const departmentValue = employee?.department as unknown as { name?: string } | { name?: string }[] | null | undefined;
+  const dept = Array.isArray(departmentValue) ? departmentValue[0]?.name : departmentValue?.name;
+  const hour = new Date().getHours(); const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  return <div className="space-y-6"><section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-muted text-sm">{format(new Date(), "EEEE, d MMMM yyyy")}</p><h2 className="mt-1 text-3xl font-bold tracking-tight">{greeting}, {profile.full_name.split(" ")[0]} <span aria-hidden>👋</span></h2><p className="text-muted mt-2">Here’s how your workday is flowing.</p></div><div className="flex items-center gap-3 rounded-2xl border bg-[var(--surface)] p-3"><Avatar name={profile.full_name} src={profile.avatar_url}/><div><p className="font-semibold">{employee?.designation ?? "Employee"}</p><p className="text-muted text-xs">{dept ?? "Department unassigned"}</p></div></div></section>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
+      ["Weekly hours", `${Math.floor(weeklyMinutes/60)}h ${weeklyMinutes%60}m`, TrendingUp, "Across recorded workdays"], ["Attendance rate", `${week.length ? Math.round(presentDays/week.length*100) : 0}%`, CalendarCheck, `${presentDays} days recorded`], ["Pending leave", String(leaveRes.data?.length ?? 0), FileText, "Awaiting HR review"], ["Unread updates", String((notificationRes.data ?? []).filter(n=>!n.is_read).length), Bell, "Recent notifications"],
+    ].map(([label,value,Icon,caption]) => { const I = Icon as typeof TrendingUp; return <Card key={String(label)}><CardContent className="pt-5"><div className="mb-5 flex items-center justify-between"><span className="text-muted text-sm">{String(label)}</span><span className="grid size-9 place-items-center rounded-xl bg-[var(--surface-muted)]"><I className="size-4 text-[var(--primary)]"/></span></div><p className="text-2xl font-bold">{String(value)}</p><p className="text-muted mt-1 text-xs">{String(caption)}</p></CardContent></Card>})}</div>
+    <div className="grid gap-4 lg:grid-cols-3"><AttendanceCard record={attendanceRes.data} serverNow={new Date().getTime()}/><WeeklyHoursChart data={chartData}/></div>
+    <div className="grid gap-4 lg:grid-cols-3"><Card><CardHeader><CardTitle>Leave balances</CardTitle><Button asChild variant="ghost" size="sm"><Link href="/leave">Manage <ArrowRight className="size-3"/></Link></Button></CardHeader><CardContent className="space-y-4">{(balancesRes.data ?? []).map((balance) => { const lt = Array.isArray(balance.leave_type) ? balance.leave_type[0] : balance.leave_type; const total=balance.balance_days+balance.used_days; return <div key={lt?.name}><div className="mb-1.5 flex justify-between text-sm"><span>{lt?.name}</span><strong>{balance.balance_days} days</strong></div><div className="h-2 rounded-full bg-[var(--surface-muted)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{width:`${total ? balance.balance_days/total*100 : 0}%`}}/></div></div>})}{!balancesRes.data?.length && <p className="text-muted text-sm">No leave balances assigned.</p>}</CardContent></Card>
+      <Card><CardHeader><CardTitle>Latest payroll</CardTitle><CircleDollarSign className="size-5 text-[var(--primary)]"/></CardHeader><CardContent>{payrollRes.data?.[0] ? <><p className="text-muted text-sm">{format(new Date(`${payrollRes.data[0].payroll_month}-01T00:00:00`),"MMMM yyyy")}</p><p className="mt-2 text-3xl font-bold">{formatCurrency(payrollRes.data[0].net_salary)}</p><Badge tone="success" className="mt-4">{payrollRes.data[0].status}</Badge><Button asChild variant="outline" className="mt-5 w-full"><Link href="/payroll">Open payslip</Link></Button></> : <p className="text-muted text-sm">No published payroll record yet.</p>}</CardContent></Card>
+      <Card><CardHeader><CardTitle>Quick actions</CardTitle><Sparkles className="size-5 text-amber-500"/></CardHeader><CardContent className="grid gap-2">{[["Apply for leave","/leave"],["View attendance","/attendance"],["Edit profile","/profile"]].map(([label,href])=><Button key={href} asChild variant="secondary" className="justify-between"><Link href={href}>{label}<ArrowRight className="size-4"/></Link></Button>)}</CardContent></Card></div>
+    <div className="grid gap-4 lg:grid-cols-2"><Card><CardHeader><CardTitle>Announcements</CardTitle><MegaphoneIcon/></CardHeader><CardContent className="space-y-3">{(announcementRes.data ?? []).map(a=><div key={a.id} className="rounded-xl border p-3"><div className="flex justify-between gap-3"><p className="font-semibold">{a.title}</p><Badge tone={a.priority==="urgent"?"danger":a.priority==="important"?"warning":"neutral"}>{a.priority}</Badge></div><p className="text-muted mt-1 line-clamp-2 text-sm">{a.message}</p></div>)}{!announcementRes.data?.length&&<p className="text-muted text-sm">No active announcements.</p>}</CardContent></Card>
+      <Card><CardHeader><CardTitle>Recent notifications</CardTitle><Button asChild variant="ghost" size="sm"><Link href="/notifications">View all</Link></Button></CardHeader><CardContent className="space-y-1">{(notificationRes.data??[]).map(n=><Link href={n.link??"/notifications"} key={n.id} className="flex gap-3 rounded-xl p-3 hover:bg-[var(--surface-muted)]"><span className={`mt-1 size-2 shrink-0 rounded-full ${n.is_read?"bg-slate-300":"bg-[var(--primary)]"}`}/><div><p className="text-sm font-semibold">{n.title}</p><p className="text-muted line-clamp-1 text-xs">{n.message}</p></div></Link>)}{!notificationRes.data?.length&&<p className="text-muted text-sm">You’re all caught up.</p>}</CardContent></Card></div>
+  </div>;
+}
+
+function MegaphoneIcon(){ return <span className="grid size-8 place-items-center rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950"><Sparkles className="size-4"/></span> }

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #faf8f6;
+  --foreground: #201a21;
+  --surface: #ffffff;
+  --surface-muted: #f3efef;
+  --border: #e7dfe4;
+  --primary: #68235d;
+  --primary-foreground: #fffafc;
+  --muted-foreground: #736a70;
+  --accent: #e69042;
+}
+
+.dark {
+  --background: #171417;
+  --foreground: #f7f1f5;
+  --surface: #211d21;
+  --surface-muted: #2a2429;
+  --border: #3b3339;
+  --primary: #c886b8;
+  --primary-foreground: #21101e;
+  --muted-foreground: #bcb0b8;
+  --accent: #f0a45d;
+}
+
+* { border-color: var(--border); }
+html { scroll-behavior: smooth; }
+body { background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
+button, a, input, select, textarea { outline-color: var(--primary); }
+::selection { background: color-mix(in srgb, var(--primary) 25%, transparent); }
+
+.surface { background: var(--surface); }
+.text-muted { color: var(--muted-foreground); }
+.grid-dots { background-image: radial-gradient(color-mix(in srgb, var(--primary) 22%, transparent) 1px, transparent 1px); background-size: 18px 18px; }
+.card-shadow { box-shadow: 0 1px 2px rgb(38 20 34 / 4%), 0 12px 32px rgb(38 20 34 / 5%); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; color: #111; }
+  .surface { background: white; }
+}

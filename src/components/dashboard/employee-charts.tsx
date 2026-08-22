@@ -1,0 +1,5 @@
+"use client";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function WeeklyHoursChart({ data }: { data: { day: string; hours: number }[] }) { return <Card className="lg:col-span-2"><CardHeader><div><CardTitle>Weekly working hours</CardTitle><p className="text-muted mt-1 text-sm">Recorded hours for the current week</p></div></CardHeader><CardContent className="h-64"><ResponsiveContainer width="100%" height="100%"><BarChart data={data} margin={{ left: -20, right: 5 }}><CartesianGrid vertical={false} stroke="var(--border)"/><XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12}/><YAxis tickLine={false} axisLine={false} fontSize={12}/><Tooltip cursor={{fill:"var(--surface-muted)"}} contentStyle={{borderRadius:12,border:"1px solid var(--border)",background:"var(--surface)"}}/><Bar dataKey="hours" fill="var(--primary)" radius={[6,6,0,0]} maxBarSize={34}/></BarChart></ResponsiveContainer></CardContent></Card>; }

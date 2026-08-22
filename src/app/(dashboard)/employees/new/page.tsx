@@ -1,0 +1,14 @@
+import { format } from "date-fns";
+import { UserPlus } from "lucide-react";
+import { requireProfile } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input, Label } from "@/components/ui/input";
+import { createEmployee } from "@/features/employees/actions";
+
+export default async function NewEmployeePage() {
+  const actor = await requireProfile(["hr", "admin"]);
+  const { data: departments } = await (await createClient()).from("departments").select("id,name").eq("active", true).order("name");
+  return <div className="mx-auto max-w-3xl space-y-6"><div><h2 className="text-2xl font-bold">Add an employee</h2><p className="text-muted mt-1">Provision a secure account and complete the initial job profile.</p></div><Card><CardHeader><CardTitle>Account and job information</CardTitle></CardHeader><CardContent><form action={createEmployee} className="grid gap-4 sm:grid-cols-2"><div><Label>Full name</Label><Input name="fullName" autoComplete="name" required/></div><div><Label>Employee ID</Label><Input name="employeeCode" placeholder="DF-011" required/></div><div><Label>Work email</Label><Input name="email" type="email" autoComplete="off" required/></div><div><Label>Temporary password</Label><Input name="password" type="password" minLength={8} autoComplete="new-password" required/></div><div><Label>Designation</Label><Input name="designation" required/></div><div><Label>Department</Label><select name="departmentId" required className="h-11 w-full rounded-xl border bg-[var(--surface)] px-3 text-sm"><option value="">Choose department</option>{(departments ?? []).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}</select></div><div><Label>Employment type</Label><select name="employmentType" className="h-11 w-full rounded-xl border bg-[var(--surface)] px-3 text-sm"><option value="full_time">Full time</option><option value="part_time">Part time</option><option value="contract">Contract</option><option value="intern">Intern</option></select></div><div><Label>Joining date</Label><Input name="joiningDate" type="date" defaultValue={format(new Date(), "yyyy-MM-dd")} required/></div>{actor.role === "admin" && <div className="sm:col-span-2"><Label>Account role</Label><select name="role" defaultValue="employee" className="h-11 w-full rounded-xl border bg-[var(--surface)] px-3 text-sm"><option value="employee">Employee</option><option value="hr">HR Officer</option><option value="admin">Administrator</option></select><p className="text-muted mt-1 text-xs">Only Administrators can provision privileged accounts.</p></div>}<Button className="sm:col-span-2"><UserPlus className="size-4"/>Create employee account</Button></form></CardContent></Card></div>;
+}

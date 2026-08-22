@@ -1,0 +1,4 @@
+"use server";
+import{revalidatePath}from"next/cache";import{requireProfile}from"@/lib/auth/session";import{createClient}from"@/lib/supabase/server";
+export async function markNotification(formData:FormData){const p=await requireProfile();const s=await createClient();const id=String(formData.get("id"));const{error}=await s.from("notifications").update({is_read:true,read_at:new Date().toISOString()}).eq("id",id).eq("recipient_id",p.id);if(error)throw new Error(error.message);revalidatePath("/notifications")}
+export async function markAllNotifications(){const p=await requireProfile();const s=await createClient();const{error}=await s.from("notifications").update({is_read:true,read_at:new Date().toISOString()}).eq("recipient_id",p.id).eq("is_read",false);if(error)throw new Error(error.message);revalidatePath("/notifications")}
