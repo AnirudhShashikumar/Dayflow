@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
+import { dashboardPath } from "@/lib/permissions";
 import type { Profile, UserRole } from "@/types/domain";
 
 export const getSessionProfile = cache(async (): Promise<Profile | null> => {
@@ -17,6 +18,6 @@ export async function requireProfile(roles?: UserRole[]) {
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (profile.account_status !== "active") redirect("/login?error=inactive");
-  if (roles && !roles.includes(profile.role)) redirect(profile.role === "employee" ? "/overview" : "/hr");
+  if (roles && !roles.includes(profile.role)) redirect(dashboardPath(profile.role));
   return profile;
 }

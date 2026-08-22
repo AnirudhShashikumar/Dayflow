@@ -6,19 +6,61 @@ import { loginSchema, registerSchema } from "@/lib/validations/business";
 import { dashboardPath } from "@/lib/permissions";
 import { getPublicEnv, isSupabaseConfigured } from "@/lib/env";
 import type { UserRole } from "@/types/domain";
+import { canEnterPortal, parseLoginPortal, type LoginPortal } from "./portal";
 
-export type ActionState = { error?: string; success?: string };
+export type ActionState = { error?: string; success?: string; portal?: LoginPortal };
+
+const userRoles = new Set<UserRole>(["employee", "hr", "admin"]);
+
+function isUserRole(value: unknown): value is UserRole {
+  return typeof value === "string" && userRoles.has(value as UserRole);
+}
 
 export async function signIn(_: ActionState, formData: FormData): Promise<ActionState> {
-  if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and anon key to .env.local." };
+  const portal = parseLoginPortal(formData.get("portal"));
+  if (!isSupabaseConfigured) return { error: "Unable to sign in right now. Please try again.", portal };
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid details" };
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error || !data.user) return { error: "Email or password is incorrect." };
-  const { data: profile } = await supabase.from("profiles").select("role,account_status").eq("id", data.user.id).single();
-  if (!profile || profile.account_status !== "active") { await supabase.auth.signOut(); return { error: "This account is not active. Contact HR." }; }
-  redirect(dashboardPath(profile.role as UserRole));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check your sign-in details.", portal };
+
+  let destination: string | null = null;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+    if (error || !data.user) return { error: "Invalid email or password.", portal };
+
+    const cleanupSession = async () => {
+      try { await supabase.auth.signOut(); } catch { /* Best-effort cleanup after authentication. */ }
+    };
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role,account_status")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      await cleanupSession();
+      return { error: "Unable to sign in right now. Please try again.", portal };
+    }
+    if (!profile || !isUserRole(profile.role)) {
+      await cleanupSession();
+      return { error: "We could not determine your account access. Please contact your administrator.", portal };
+    }
+    if (profile.account_status !== "active") {
+      await cleanupSession();
+      return { error: "This account is not active. Contact HR.", portal };
+    }
+    if (!canEnterPortal(portal, profile.role)) {
+      await cleanupSession();
+      return { error: "This account does not have access to the HR portal.", portal };
+    }
+
+    destination = dashboardPath(profile.role);
+  } catch {
+    return { error: "Unable to sign in right now. Please try again.", portal };
+  }
+
+  redirect(destination ?? "/login");
 }
 
 export async function register(_: ActionState, formData: FormData): Promise<ActionState> {
