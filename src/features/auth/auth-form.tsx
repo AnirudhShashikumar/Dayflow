@@ -17,7 +17,6 @@ export function LoginForm() { const [state, action] = useActionState(signIn, ini
   <div className="flex items-center justify-between text-sm"><label className="flex items-center gap-2"><input type="checkbox" className="accent-[var(--primary)]" />Remember me</label><Link className="font-medium text-[var(--primary)] hover:underline" href="/forgot-password">Forgot password?</Link></div>
   <SubmitButton className="w-full" size="lg">Sign in to Dayflow</SubmitButton>
   <p className="text-muted text-center text-sm">New employee? <Link href="/register" className="font-semibold text-[var(--primary)] hover:underline">Create an account</Link></p>
-  {process.env.NODE_ENV === "development" && <div className="rounded-xl border border-dashed p-3 text-xs text-muted"><strong className="text-[var(--foreground)]">Demo after seeding:</strong> employee@dayflow.demo / Dayflow@2026</div>}
   </form>; }
 
 export function RegisterForm() { const [state, action] = useActionState(register, initial); return <form action={action} className="space-y-4"><Feedback state={state} />
