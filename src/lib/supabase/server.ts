@@ -4,8 +4,8 @@ import { getPublicEnv } from "@/lib/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
-  const env = getPublicEnv();
-  return createServerClient(env.url, env.anonKey, {
+  const env = getPublicEnv("server client");
+  return createServerClient(env.url, env.publishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {

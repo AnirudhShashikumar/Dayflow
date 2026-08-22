@@ -1,15 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabaseEnvStatus, logSupabaseConfigurationError } from "@/lib/env";
 
 const protectedPaths = ["/overview", "/profile", "/attendance", "/leave", "/payroll", "/documents", "/notifications", "/settings", "/hr", "/admin", "/employees", "/reports", "/announcements", "/activity", "/departments"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return response;
+  const environment = getSupabaseEnvStatus();
+  if (!environment.configured) {
+    logSupabaseConfigurationError("proxy");
+    return response;
+  }
 
-  const supabase = createServerClient(url, key, {
+  const supabase = createServerClient(environment.env.url, environment.env.publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (items) => {

@@ -28,17 +28,19 @@ npx supabase db reset
 npm run dev
 ```
 
-Copy the local Supabase URL, anon key, and service-role key printed by `supabase start` into `.env.local`. Configure Supabase Auth Site URL as `http://localhost:3000` and add `http://localhost:3000/auth/callback` to redirect URLs. For a hosted project, run `npx supabase link --project-ref <ref>` followed by `npx supabase db push`, then execute `supabase/seed.sql` only in a non-production demo project.
+Copy the local Supabase URL, publishable key, and secret key into `.env.local`. The application also accepts the legacy anon and service-role variable names emitted by older Supabase CLI versions. Configure Supabase Auth Site URL as `http://localhost:3000` and add `http://localhost:3000/auth/callback` to redirect URLs. For a hosted project, run `npx supabase link --project-ref <ref>` followed by `npx supabase db push`, then execute `supabase/seed.sql` only in a non-production demo project.
 
 Environment variables:
 
 | Variable | Scope | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser/server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser/server | RLS-constrained public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Trusted administrator provisioning |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser/server | RLS-constrained public key |
+| `SUPABASE_SECRET_KEY` | Server only | Trusted administrator provisioning |
 | `NEXT_PUBLIC_APP_URL` | Browser/server | Auth callback base URL |
 | `HR_INVITATION_CODE` | Server only | Reserved optional invitation flow |
+
+Legacy aliases `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` remain supported for existing local environments.
 
 ## Demo credentials
 
@@ -64,7 +66,7 @@ npm run build
 ## Deployment
 
 1. Create a Supabase production project, apply `supabase/migrations/202608220001_initial_schema.sql`, and configure the Auth Site URL plus `https://<domain>/auth/callback` redirect.
-2. Import the repository into Vercel and add all environment variables. Keep `SUPABASE_SERVICE_ROLE_KEY` server-only.
+2. Import the repository into Vercel and add all environment variables. Keep `SUPABASE_SECRET_KEY` server-only.
 3. Deploy, verify an Employee/HR login, and test RLS with separate sessions. Do not load demo seed data into a real production tenant.
 
 The application contains no localhost-only runtime paths. Private documents use short-lived signed URLs from a non-public Storage bucket.
