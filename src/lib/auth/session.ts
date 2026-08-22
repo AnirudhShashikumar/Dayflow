@@ -18,10 +18,6 @@ export async function requireProfile(roles?: UserRole[]) {
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (profile.account_status !== "active") redirect("/login?error=inactive");
-<<<<<<< HEAD
-  if (roles && !roles.includes(profile.role)) redirect("/home");
-=======
   if (roles && !roles.includes(profile.role)) redirect(dashboardPath(profile.role));
->>>>>>> 49b546c447363e1e87832c34237920a991730ffe
   return profile;
 }
