@@ -1,17 +1,30 @@
 -- Fictional Dayflow Technologies demo data. Password for every demo account: Dayflow@2026
+-- The bcrypt hash below is precomputed for Dayflow@2026 so seeding does not depend on pgcrypto/gen_salt.
 -- Reset the public schema/project before re-running this file.
 insert into auth.users (instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,recovery_token,email_change_token_new,email_change)
-values
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000001','authenticated','authenticated','admin@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Ananya Iyer","employee_code":"DF-001"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000002','authenticated','authenticated','hr@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Rohan Mehta","employee_code":"DF-002"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000003','authenticated','authenticated','employee@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Aarav Sharma","employee_code":"DF-003"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000004','authenticated','authenticated','priya@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Priya Nair","employee_code":"DF-004"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000005','authenticated','authenticated','vikram@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Vikram Rao","employee_code":"DF-005"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000006','authenticated','authenticated','meera@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Meera Kapoor","employee_code":"DF-006"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000007','authenticated','authenticated','kabir@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Kabir Singh","employee_code":"DF-007"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000008','authenticated','authenticated','isha@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Isha Kulkarni","employee_code":"DF-008"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000009','authenticated','authenticated','arjun@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Arjun Patel","employee_code":"DF-009"}',now(),now(),'','','',''),
-('00000000-0000-0000-0000-000000000000','10000000-0000-0000-0000-000000000010','authenticated','authenticated','neha@dayflow.demo',crypt('Dayflow@2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"full_name":"Neha Verma","employee_code":"DF-010"}',now(),now(),'','','','');
+select
+  '00000000-0000-0000-0000-000000000000'::uuid,
+  demo.id::uuid,
+  'authenticated',
+  'authenticated',
+  demo.email,
+  '$2a$10$Q8WpDLjIm6MvMUjlUGgYY.zXzQ5bqj7ovS8aYqarjC6B2wRZg00HS',
+  now(),
+  jsonb_build_object('provider','email','providers',array['email']),
+  jsonb_build_object('full_name',demo.full_name,'employee_code',demo.employee_code),
+  now(),now(),'','','',''
+from (values
+  ('10000000-0000-0000-0000-000000000001','admin@dayflow.demo','Ananya Iyer','DF-001'),
+  ('10000000-0000-0000-0000-000000000002','hr@dayflow.demo','Rohan Mehta','DF-002'),
+  ('10000000-0000-0000-0000-000000000003','employee@dayflow.demo','Aarav Sharma','DF-003'),
+  ('10000000-0000-0000-0000-000000000004','priya@dayflow.demo','Priya Nair','DF-004'),
+  ('10000000-0000-0000-0000-000000000005','vikram@dayflow.demo','Vikram Rao','DF-005'),
+  ('10000000-0000-0000-0000-000000000006','meera@dayflow.demo','Meera Kapoor','DF-006'),
+  ('10000000-0000-0000-0000-000000000007','kabir@dayflow.demo','Kabir Singh','DF-007'),
+  ('10000000-0000-0000-0000-000000000008','isha@dayflow.demo','Isha Kulkarni','DF-008'),
+  ('10000000-0000-0000-0000-000000000009','arjun@dayflow.demo','Arjun Patel','DF-009'),
+  ('10000000-0000-0000-0000-000000000010','neha@dayflow.demo','Neha Verma','DF-010')
+) as demo(id,email,full_name,employee_code);
 
 insert into auth.identities (id,user_id,provider_id,identity_data,provider,last_sign_in_at,created_at,updated_at)
 select gen_random_uuid(),id,email,jsonb_build_object('sub',id::text,'email',email),'email',now(),now(),now() from auth.users where email like '%@dayflow.demo';
