@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, Bell, Building2, CalendarDays, ChevronLeft, ChevronRight, CircleDollarSign, Command, FileBarChart, FileText, LayoutDashboard, LogOut, Megaphone, Menu, Search, Settings, UserRound, Users, X } from "lucide-react";
+import { Activity, Bell, Building2, CalendarDays, ChevronLeft, ChevronRight, CircleDollarSign, Command, FileBarChart, FileText, Home, LayoutDashboard, LogOut, Megaphone, Menu, Search, Settings, UserRound, Users, X } from "lucide-react";
 import { Brand } from "@/components/shared/brand";
 import { Avatar } from "@/components/shared/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,17 +15,17 @@ import { cn } from "@/lib/utils";
 import type { Profile } from "@/types/domain";
 
 const employeeNav = [
-  ["Overview", "/overview", LayoutDashboard], ["My Profile", "/profile", UserRound], ["Attendance", "/attendance", CalendarDays], ["Leave", "/leave", FileText], ["Payroll", "/payroll", CircleDollarSign], ["Documents", "/documents", FileText], ["Notifications", "/notifications", Bell], ["Settings", "/settings", Settings],
+  ["Home", "/home", Home], ["Overview", "/overview", LayoutDashboard], ["My Profile", "/profile", UserRound], ["Attendance", "/attendance", CalendarDays], ["Leave", "/leave", FileText], ["Payroll", "/payroll", CircleDollarSign], ["Documents", "/documents", FileText], ["Notifications", "/notifications", Bell], ["Settings", "/settings", Settings],
 ] as const;
 const managementNav = [
-  ["Overview", "/hr", LayoutDashboard], ["Employees", "/employees", Users], ["Attendance", "/attendance", CalendarDays], ["Leave Requests", "/leave", FileText], ["Payroll", "/payroll", CircleDollarSign], ["Reports", "/reports", FileBarChart], ["Announcements", "/announcements", Megaphone], ["Activity Log", "/activity", Activity], ["Departments", "/departments", Building2], ["Settings", "/settings", Settings],
+  ["Home", "/home", Home], ["Overview", "/hr", LayoutDashboard], ["Employees", "/employees", Users], ["Attendance", "/attendance", CalendarDays], ["Leave Requests", "/leave", FileText], ["Payroll", "/payroll", CircleDollarSign], ["Reports", "/reports", FileBarChart], ["Announcements", "/announcements", Megaphone], ["Activity Log", "/activity", Activity], ["Departments", "/departments", Building2], ["Settings", "/settings", Settings],
 ] as const;
 
-const pageNames: Record<string, string> = { overview: "Overview", hr: "HR Overview", admin: "Admin Overview", profile: "My Profile", attendance: "Attendance", leave: "Leave & Time Off", payroll: "Payroll", documents: "Documents", notifications: "Notifications", settings: "Settings", employees: "Employees", reports: "Reports & Analytics", announcements: "Announcements", activity: "Activity Log", departments: "Departments" };
+const pageNames: Record<string, string> = { home: "Home", overview: "Overview", hr: "HR Overview", admin: "Admin Overview", profile: "My Profile", attendance: "Attendance", leave: "Leave & Time Off", payroll: "Payroll", documents: "Documents", notifications: "Notifications", settings: "Settings", employees: "Employees", reports: "Reports & Analytics", announcements: "Announcements", activity: "Activity Log", departments: "Departments" };
 
 export function AppShell({ profile, unreadCount, children }: { profile: Profile; unreadCount: number; children: React.ReactNode }) {
   const pathname = usePathname(); const router = useRouter(); const [mobile, setMobile] = useState(false); const [collapsed, setCollapsed] = useState(false); const [commandOpen, setCommandOpen] = useState(false); const [search, setSearch] = useState("");
-  const nav = profile.role === "employee" ? employeeNav : managementNav; const segment = pathname.split("/")[1] || "overview"; const title = pageNames[segment] ?? "Dayflow";
+  const nav = profile.role === "employee" ? employeeNav : managementNav; const segment = pathname.split("/")[1] || "home"; const title = pageNames[segment] ?? "Dayflow";
   useEffect(() => { const handler = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key === "k") { event.preventDefault(); setCommandOpen((v) => !v); } }; window.addEventListener("keydown", handler); return () => window.removeEventListener("keydown", handler); }, []);
   const navigateSearch = (event: React.FormEvent) => { event.preventDefault(); if (!search.trim()) return; setCommandOpen(false); router.push(profile.role === "employee" ? `/notifications?q=${encodeURIComponent(search)}` : `/employees?q=${encodeURIComponent(search)}`); };
   return <div className="min-h-screen bg-[var(--background)]">

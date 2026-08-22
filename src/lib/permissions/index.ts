@@ -14,4 +14,4 @@ const permissions: Record<UserRole, ReadonlySet<Permission>> = {
 
 export const can = (role: UserRole, permission: Permission) => permissions[role].has(permission);
 export const isManagement = (role: UserRole) => role === "hr" || role === "admin";
-export const dashboardPath = (role: UserRole) => role === "employee" ? "/overview" : role === "hr" ? "/hr" : "/admin";
+export const dashboardPath = (_role: UserRole) => "/home";
