@@ -12,4 +12,8 @@ describe("leave business rules", () => {
 describe("payroll calculations", () => {
   it("derives gross and net salary", () => expect(payrollTotals(80000,12000,4500)).toEqual({gross:92000,net:87500}));
   it("rejects negative amounts", () => expect(()=>payrollTotals(-1,0,0)).toThrow());
+  it("rejects non-finite amounts and over-deduction", () => {
+    expect(() => payrollTotals(Number.NaN, 0, 0)).toThrow();
+    expect(() => payrollTotals(100, 0, 101)).toThrow();
+  });
 });

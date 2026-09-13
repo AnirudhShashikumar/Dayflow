@@ -29,6 +29,7 @@ insert into public.departments(id,name,code,description) values
 on conflict (id) do update set name=excluded.name, code=excluded.code, description=excluded.description;
 
 update employee_profiles e set
+  employee_code='DF-001',
   department_id='20000000-0000-0000-0000-000000000001',
   designation='Senior Software Engineer',
   joining_date='2026-01-01',

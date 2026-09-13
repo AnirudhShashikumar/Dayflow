@@ -65,13 +65,17 @@ export async function signIn(_: ActionState, formData: FormData): Promise<Action
 
 export async function register(_: ActionState, formData: FormData): Promise<ActionState> {
   if (!isSupabaseConfigured) return { error: "Supabase is not configured yet. Add the project URL and publishable key (or legacy anon key) to .env.local." };
-  const parsed = registerSchema.safeParse({ ...Object.fromEntries(formData), employeeCode: formData.get("employeeCode") });
+  const parsed = registerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form" };
-  const { confirmPassword: _confirm, employeeCode, fullName, ...credentials } = parsed.data;
+  const { confirmPassword: _confirm, fullName, ...credentials } = parsed.data;
   void _confirm;
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({ ...credentials, options: { data: { full_name: fullName, employee_code: employeeCode, role: "employee" } } });
-  return error ? { error: error.message } : { success: "Account created. Check your email to verify your address." };
+  const { error } = await supabase.auth.signUp({ ...credentials, options: { data: { full_name: fullName } } });
+  if (error) {
+    console.error("Registration failed", { code: error.code });
+    return { error: "Account could not be created. Check your details or contact HR." };
+  }
+  return { success: "Account created. Check your email to verify your address." };
 }
 
 export async function requestPasswordReset(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -81,7 +85,11 @@ export async function requestPasswordReset(_: ActionState, formData: FormData): 
   const supabase = await createClient(); const { url } = getPublicEnv(); void url;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}/auth/callback?next=/reset-password` });
-  return error ? { error: error.message } : { success: "If an account exists, a reset link has been sent." };
+  if (error) {
+    console.error("Password reset request failed", { code: error.code });
+    return { error: "Password reset could not be requested. Please try again." };
+  }
+  return { success: "If an account exists, a reset link has been sent." };
 }
 
 export async function updatePassword(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -89,7 +97,10 @@ export async function updatePassword(_: ActionState, formData: FormData): Promis
   const password = String(formData.get("password") ?? "");
   if (password.length < 8) return { error: "Use at least 8 characters." };
   const supabase = await createClient(); const { error } = await supabase.auth.updateUser({ password });
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("Password update failed", { code: error.code });
+    return { error: "Password could not be updated. Please request a new reset link." };
+  }
   redirect("/home");
 }
 

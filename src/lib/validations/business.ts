@@ -3,7 +3,6 @@ import { z } from "zod";
 
 export const loginSchema = z.object({ email: z.email("Enter a valid email"), password: z.string().min(8, "Use at least 8 characters") });
 export const registerSchema = z.object({
-  employeeCode: z.string().min(3).max(30),
   fullName: z.string().min(2).max(100),
   email: z.email(),
   password: z.string().min(8).regex(/[A-Z]/, "Add an uppercase letter").regex(/[0-9]/, "Add a number"),
@@ -18,8 +17,9 @@ export const calculateLeaveDays = (start: string, end: string, halfDay = false) 
 export const intervalsOverlap = (aStart: string, aEnd: string, bStart: string, bEnd: string) => aStart <= bEnd && bStart <= aEnd;
 
 export function payrollTotals(basic: number, allowances: number, deductions: number) {
-  if ([basic, allowances, deductions].some((value) => value < 0)) throw new Error("Payroll amounts cannot be negative");
+  if ([basic, allowances, deductions].some((value) => !Number.isFinite(value) || value < 0)) throw new Error("Payroll amounts must be non-negative numbers");
   const gross = basic + allowances;
+  if (deductions > gross) throw new Error("Deductions cannot exceed gross pay");
   return { gross, net: gross - deductions };
 }
 

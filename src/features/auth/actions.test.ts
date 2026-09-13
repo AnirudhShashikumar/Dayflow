@@ -69,7 +69,7 @@ describe("dual-portal sign in", () => {
   });
 
   it.each([
-    ["employee", "employee", "/overview"],
+    ["employee", "employee", "/home"],
     ["hr", "hr", "/hr"],
     ["admin", "hr", "/admin"],
     ["hr", "employee", "/hr"],
@@ -88,7 +88,7 @@ describe("dual-portal sign in", () => {
 
     await signIn({}, loginForm());
 
-    expect(mocks.redirect).toHaveBeenCalledWith("/overview");
+    expect(mocks.redirect).toHaveBeenCalledWith("/home");
   });
 
   it("rejects an employee from the HR portal and cleans up the session", async () => {
@@ -167,7 +167,7 @@ describe("public registration", () => {
     vi.clearAllMocks();
   });
 
-  it("always provisions an Employee account regardless of portal-like form data", async () => {
+  it("does not pass a claimed role or employee ID from public registration", async () => {
     const { signUp } = setupClient();
     const form = new FormData();
     form.set("employeeCode", "DF-011");
@@ -176,11 +176,12 @@ describe("public registration", () => {
     form.set("password", "Password1");
     form.set("confirmPassword", "Password1");
     form.set("portal", "hr");
+    form.set("role", "admin");
 
     await register({}, form);
 
     expect(signUp).toHaveBeenCalledWith(expect.objectContaining({
-      options: { data: expect.objectContaining({ role: "employee" }) },
+      options: { data: { full_name: "Demo Employee" } },
     }));
   });
 });
@@ -213,6 +214,6 @@ describe("password recovery", () => {
     await updatePassword({}, form);
 
     expect(updateUser).toHaveBeenCalledWith({ password: "NewPassword1" });
-    expect(mocks.redirect).toHaveBeenCalledWith("/overview?password=updated");
+    expect(mocks.redirect).toHaveBeenCalledWith("/home");
   });
 });

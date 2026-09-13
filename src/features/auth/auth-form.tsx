@@ -55,7 +55,7 @@ export function LoginForm({ initialPortal = "employee" }: { initialPortal?: Logi
         <Feedback state={visibleState} />
         <div><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" autoComplete="email" placeholder="you@company.com" required disabled={pending} /></div>
         <Password disabled={pending} />
-        <div className="flex items-center justify-between gap-4 text-sm"><label className="flex items-center gap-2"><input type="checkbox" className="size-4 accent-[var(--primary)]" disabled={pending} />Remember me</label><Link className="font-medium text-[var(--primary)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2" href="/forgot-password">Forgot password?</Link></div>
+        <div className="text-right text-sm"><Link className="font-medium text-[var(--primary)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2" href="/forgot-password">Forgot password?</Link></div>
         <SubmitButton className="w-full" size="lg" pendingLabel={copy.pending}>{copy.button}</SubmitButton>
         <p className="text-muted text-center text-xs">{copy.support}</p>
         <p className="text-muted text-center text-sm">New employee? <Link href="/register" className="font-semibold text-[var(--primary)] hover:underline">Create an account</Link></p>
@@ -65,9 +65,9 @@ export function LoginForm({ initialPortal = "employee" }: { initialPortal?: Logi
 }
 
 export function RegisterForm() { const [state, action] = useActionState(register, initial); return <form action={action} className="space-y-4"><Feedback state={state} />
-  <div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="employeeCode">Employee ID</Label><Input id="employeeCode" name="employeeCode" placeholder="DF-011" required /></div><div><Label htmlFor="fullName">Full name</Label><Input id="fullName" name="fullName" autoComplete="name" required /></div></div>
+  <div><Label htmlFor="fullName">Full name</Label><Input id="fullName" name="fullName" autoComplete="name" required /></div>
   <div><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" autoComplete="email" required /></div><Password autoComplete="new-password" /><Password name="confirmPassword" label="Confirm password" autoComplete="new-password" />
-  <p className="text-muted text-xs">Use 8+ characters with an uppercase letter and a number. Public registrations always receive the Employee role.</p><SubmitButton className="w-full" size="lg">Create employee account</SubmitButton><p className="text-muted text-center text-sm">Already registered? <Link href="/login" className="font-semibold text-[var(--primary)]">Sign in</Link></p></form>; }
+  <p className="text-muted text-xs">Use 8+ characters with an uppercase letter and a number. Your employee ID is assigned automatically; HR manages job details and portal access.</p><SubmitButton className="w-full" size="lg">Create employee account</SubmitButton><p className="text-muted text-center text-sm">Already registered? <Link href="/login" className="font-semibold text-[var(--primary)]">Sign in</Link></p></form>; }
 
 export function ForgotForm() { const [state, action] = useActionState(requestPasswordReset, initial); return <form action={action} className="space-y-4"><Feedback state={state} /><div><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" autoComplete="email" required /></div><SubmitButton className="w-full" size="lg">Send reset link</SubmitButton><Button asChild variant="ghost" className="w-full"><Link href="/login">Back to sign in</Link></Button></form>; }
 
